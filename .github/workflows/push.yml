@@ -1,0 +1,42 @@
+name: Gold Signal push
+
+on:
+  push:
+    branches: [main]
+    paths: [xauusd_live.txt]
+  workflow_dispatch:
+
+concurrency:
+  group: gold-signal-push
+  cancel-in-progress: false
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Get market data (latest + previous)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          path: data
+
+      - name: Get app rules
+        uses: actions/checkout@v4
+        with:
+          repository: dastegir007-bot/gold-signal
+          path: app
+
+      - name: Install push library
+        run: npm install --no-save --no-audit --no-fund web-push@3.6.7
+
+      - name: Check signal and notify
+        run: node app/notify.js
+        env:
+          DATA_DIR: data
+          LOT: "0.02"
+          PUSH_SUB: ${{ secrets.PUSH_SUB }}
+          VAPID_PRIVATE: ${{ secrets.VAPID_PRIVATE }}
+          VAPID_PUBLIC: BC7qbMjPryrFnzdvaegWkTUZ0i9HJeF8sZG5gut2vJz0YF8jV5uw-NAPRJSZSqFsQmMrGNQHrAwITgzsonbjLPk
+          VAPID_SUBJECT: https://dastegir007-bot.github.io/gold-signal/
+          FORCE_TEST: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
