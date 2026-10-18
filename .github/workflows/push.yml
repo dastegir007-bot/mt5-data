@@ -1,24 +1,28 @@
-name: Gold Signal push
+name: AURX AI push
 
 on:
   push:
     branches: [main]
     paths: [xauusd_live.txt]
+  schedule:
+    - cron: "*/10 * * * *"
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 concurrency:
-  group: gold-signal-push
+  group: aurx-push
   cancel-in-progress: false
 
 jobs:
   notify:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
-      - name: Get market data (latest + previous)
+      - name: Get market data and signal record
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
           path: data
 
       - name: Get app rules
@@ -30,13 +34,27 @@ jobs:
       - name: Install push library
         run: npm install --no-save --no-audit --no-fund web-push@3.6.7
 
-      - name: Check signal and notify
+      - name: Signals, record and notifications
         run: node app/notify.js
         env:
           DATA_DIR: data
-          LOT: "0.02"
           PUSH_SUB: ${{ secrets.PUSH_SUB }}
           VAPID_PRIVATE: ${{ secrets.VAPID_PRIVATE }}
           VAPID_PUBLIC: BC7qbMjPryrFnzdvaegWkTUZ0i9HJeF8sZG5gut2vJz0YF8jV5uw-NAPRJSZSqFsQmMrGNQHrAwITgzsonbjLPk
           VAPID_SUBJECT: https://dastegir007-bot.github.io/gold-signal/
           FORCE_TEST: ${{ github.event_name == 'workflow_dispatch' && '1' || '' }}
+
+      - name: Save signal record
+        if: always()
+        run: |
+          cd data
+          if [ -n "$(git status --porcelain sts)" ]; then
+            git config user.name "aurx-bot"
+            git config user.email "aurx-bot@users.noreply.github.com"
+            git add sts/state.json
+            git commit -q -m "AURX AI record"
+            for i in 1 2 3 4; do
+              git pull -q --rebase origin main && git push -q origin HEAD:main && break
+              sleep 5
+            done
+          fi
