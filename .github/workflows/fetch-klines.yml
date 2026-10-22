@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   fetch:
@@ -37,8 +37,8 @@ jobs:
                   w = csv.writer(f); w.writerow(["open_time", "open", "high", "low", "close", "volume"]); w.writerows(rows)
               print(sym, len(rows), "rows", rows[0][0], rows[-1][0])
           PY
-      - uses: actions/upload-artifact@v4
-        with:
-          name: klines
-          path: klines/
-          retention-days: 3
+      - name: Put the files on a temporary branch (klines-data)
+        run: |
+          cd klines && gzip -9 *.csv && git init -q && git checkout -q -b klines-data && git add .
+          git -c user.name=aurx-bot -c user.email=aurx-bot@users.noreply.github.com commit -q -m "Binance H1 klines (temporary)"
+          git push -q -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" klines-data
