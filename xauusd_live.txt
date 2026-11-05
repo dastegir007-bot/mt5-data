@@ -2,9 +2,9 @@
 # server time = broker time; PKT = server + 5h (Exness server is UTC)
 [INFO]
 symbol,XAUUSDm
-server_time,2026.11.05 22:00:12
-gmt_time,2026.11.05 22:00:12
-vps_local_time,2026.11.05 14:00:12
+server_time,2026.11.05 22:15:12
+gmt_time,2026.11.05 22:15:12
+vps_local_time,2026.11.05 14:15:12
 last_tick_time,2026.11.05 21:57:59
 bid,4088.572
 ask,4088.812
